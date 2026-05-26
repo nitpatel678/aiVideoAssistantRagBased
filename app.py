@@ -317,6 +317,23 @@ html, body, [class*="css"] {
     padding: .9rem;
 }
 
+.source-notice {
+    border: 1px solid rgba(48,242,138,.28);
+    background: linear-gradient(145deg, rgba(48,242,138,.12), rgba(255,255,255,.055));
+    border-radius: 8px;
+    color: rgba(255,255,255,.86);
+    font-size: .82rem;
+    font-weight: 700;
+    line-height: 1.55;
+    margin: .35rem 0 1rem;
+    padding: .85rem;
+}
+
+.source-notice strong {
+    color: var(--green);
+    font-weight: 900;
+}
+
 .sidebar-label {
     color: rgba(255,255,255,.72);
     font-size: .78rem;
@@ -441,6 +458,8 @@ if "result" not in st.session_state:
     st.session_state.result = None
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "last_source_mode" not in st.session_state:
+    st.session_state.last_source_mode = None
 
 
 st.markdown(CSS, unsafe_allow_html=True)
@@ -484,12 +503,26 @@ with st.sidebar:
             label_visibility="collapsed",
         )
     else:
+        if st.session_state.last_source_mode != "YouTube URL":
+            st.toast("YouTube URLs work best in a local install. Use upload mode for production reliability.")
+        st.markdown(
+            """
+            <div class="source-notice">
+                <strong>YouTube URL mode:</strong> best for a locally installed system.
+                Streamlit Cloud/server deployments can be blocked by YouTube.
+                For production reliability, fork this GitHub repo and run it locally,
+                or use Upload file mode.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         st.markdown("<div class='sidebar-label'>YouTube URL</div>", unsafe_allow_html=True)
         source = st.text_input(
             "YouTube URL",
             placeholder="https://youtube.com/watch?v=...",
             label_visibility="collapsed",
         )
+    st.session_state.last_source_mode = source_mode
     st.markdown("<div class='sidebar-label'>Language mode</div>", unsafe_allow_html=True)
     language = st.selectbox("Language mode", ["english", "hinglish"], index=0, label_visibility="collapsed")
     run_clicked = st.button("Analyze Video", type="primary")
