@@ -1,6 +1,7 @@
 import html
 import os
 import re
+import tempfile
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -290,8 +291,30 @@ html, body, [class*="css"] {
 }
 
 [data-testid="stSidebar"] .stTextInput,
-[data-testid="stSidebar"] .stSelectbox {
+[data-testid="stSidebar"] .stSelectbox,
+[data-testid="stSidebar"] .stFileUploader,
+[data-testid="stSidebar"] .stRadio {
     margin-bottom: 1.05rem;
+}
+
+[data-testid="stSidebar"] .stRadio [role="radiogroup"] {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .45rem;
+}
+
+[data-testid="stSidebar"] .stRadio label {
+    background: rgba(255,255,255,.075);
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 8px;
+    padding: .58rem .7rem;
+}
+
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
+    background: rgba(255,255,255,.075);
+    border: 1px dashed rgba(48,242,138,.35);
+    border-radius: 8px;
+    padding: .9rem;
 }
 
 .sidebar-label {
@@ -406,6 +429,14 @@ def render_markdown_box(title: str, content: str) -> None:
     )
 
 
+def save_uploaded_file(uploaded_file) -> str:
+    suffix = os.path.splitext(uploaded_file.name)[1] or ".mp4"
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    temp_file.write(uploaded_file.getbuffer())
+    temp_file.close()
+    return temp_file.name
+
+
 if "result" not in st.session_state:
     st.session_state.result = None
 if "messages" not in st.session_state:
@@ -437,12 +468,28 @@ st.markdown(
 
 with st.sidebar:
     st.markdown("### Source")
-    st.markdown("<div class='sidebar-label'>YouTube URL or local file path</div>", unsafe_allow_html=True)
-    source = st.text_input(
-        "YouTube URL or local file path",
-        placeholder="https://youtube.com/watch?v=...",
+    source_mode = st.radio(
+        "Source mode",
+        ["Upload file", "YouTube URL"],
+        horizontal=True,
         label_visibility="collapsed",
     )
+    uploaded_file = None
+    source = ""
+    if source_mode == "Upload file":
+        st.markdown("<div class='sidebar-label'>Audio or video file</div>", unsafe_allow_html=True)
+        uploaded_file = st.file_uploader(
+            "Audio or video file",
+            type=["mp3", "wav", "m4a", "mp4", "mov", "webm", "mkv"],
+            label_visibility="collapsed",
+        )
+    else:
+        st.markdown("<div class='sidebar-label'>YouTube URL</div>", unsafe_allow_html=True)
+        source = st.text_input(
+            "YouTube URL",
+            placeholder="https://youtube.com/watch?v=...",
+            label_visibility="collapsed",
+        )
     st.markdown("<div class='sidebar-label'>Language mode</div>", unsafe_allow_html=True)
     language = st.selectbox("Language mode", ["english", "hinglish"], index=0, label_visibility="collapsed")
     run_clicked = st.button("Analyze Video", type="primary")
@@ -457,14 +504,23 @@ with st.sidebar:
 
 
 if run_clicked:
-    if not source.strip():
-        st.error("Add a YouTube URL or local file path first.")
+    if source_mode == "Upload file" and uploaded_file is None:
+        st.error("Upload an audio or video file first.")
+    elif source_mode == "YouTube URL" and not source.strip():
+        st.error("Add a YouTube URL first.")
     elif language == "hinglish" and not os.getenv("SARVAM_API_KEY"):
         st.error("Hinglish mode requires SARVAM_API_KEY in your .env file.")
     else:
+        temp_source = None
         try:
+            if source_mode == "Upload file":
+                temp_source = save_uploaded_file(uploaded_file)
+                pipeline_source = temp_source
+            else:
+                pipeline_source = source.strip()
+
             with st.spinner("Processing audio, transcribing, summarizing, and building RAG..."):
-                st.session_state.result = run_pipeline(source.strip(), language)
+                st.session_state.result = run_pipeline(pipeline_source, language)
                 st.session_state.messages = []
             st.success("Analysis complete.")
         except Exception as exc:
@@ -483,6 +539,9 @@ if run_clicked:
                     "Try a shorter video, confirm the source has audible speech, or set "
                     "WHISPER_MODEL=base/tiny in .env for faster local transcription."
                 )
+        finally:
+            if temp_source and os.path.exists(temp_source):
+                os.remove(temp_source)
 
 
 result = st.session_state.result
