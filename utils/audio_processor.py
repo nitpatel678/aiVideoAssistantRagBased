@@ -2,29 +2,81 @@ import yt_dlp
 import glob
 import os
 import subprocess
+import tempfile
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+
+def get_cookie_file() -> str | None:
+    cookie_path = os.getenv("YOUTUBE_COOKIES_PATH")
+    if cookie_path:
+        return cookie_path
+
+    cookie_text = os.getenv("YOUTUBE_COOKIES_TEXT")
+    if not cookie_text:
+        return None
+
+    cookie_file = tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".txt",
+        delete=False,
+        encoding="utf-8",
+    )
+    cookie_file.write(cookie_text)
+    cookie_file.close()
+    return cookie_file.name
 
 def download_youtube_audio(url:str) -> str:
     output_path = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
 
     ydl_opts = {
-        'outtmpl': output_path,
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
+        "outtmpl": output_path,
+        "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best",
+        "noplaylist": True,
+        "quiet": True,
+        "no_warnings": True,
+        "retries": 5,
+        "fragment_retries": 5,
+        "force_ipv4": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["default,-android_sdkless"],
+            }
+        },
+        "http_headers": {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+            "Accept-Language": "en-US,en;q=0.9",
+        },
+        "postprocessors": [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "128",
         }],
-        'quiet': True,
     }
+    cookie_file = get_cookie_file()
+    if cookie_file:
+        ydl_opts["cookiefile"] = cookie_file
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
 
-        # actual output after conversion
-        filename = ydl.prepare_filename(info).rsplit(".", 1)[0] + ".mp3"
+            # actual output after conversion
+            filename = ydl.prepare_filename(info).rsplit(".", 1)[0] + ".mp3"
+    except yt_dlp.utils.DownloadError as exc:
+        message = str(exc)
+        if "403" in message or "Forbidden" in message:
+            raise RuntimeError(
+                "YouTube blocked the download request from this cloud server "
+                "(HTTP 403). Try again, use a different video, or add YouTube "
+                "cookies in Streamlit secrets as YOUTUBE_COOKIES_TEXT."
+            ) from exc
+        raise RuntimeError(f"Could not download YouTube audio: {message}") from exc
 
     return filename
 

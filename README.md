@@ -28,9 +28,12 @@ SARVAM_API_KEY=your_sarvam_api_key
 SARVAM_STT_MODEL=saaras:v2.5
 WHISPER_MODEL=tiny
 EMBEDDING_DEVICE=cpu
+YOUTUBE_COOKIES_TEXT=optional_netscape_cookie_file_text
 ```
 
 `SARVAM_API_KEY` is required only for Hinglish mode.
+`YOUTUBE_COOKIES_TEXT` is optional. It can help if YouTube blocks downloads from
+Streamlit Cloud with HTTP 403.
 
 ## Deploy On Streamlit Community Cloud
 
@@ -50,6 +53,10 @@ SARVAM_API_KEY = "your_sarvam_api_key"
 SARVAM_STT_MODEL = "saaras:v2.5"
 WHISPER_MODEL = "tiny"
 EMBEDDING_DEVICE = "cpu"
+# Optional, only if YouTube blocks Streamlit Cloud with HTTP 403:
+# YOUTUBE_COOKIES_TEXT = """
+# Netscape cookie file content here
+# """
 ```
 
 10. Click `Deploy`.

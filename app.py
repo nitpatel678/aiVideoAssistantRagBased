@@ -75,7 +75,7 @@ html, body, [class*="css"] {
 
 .block-container {
     max-width: 1360px;
-    padding-top: 2.1rem;
+    padding-top: 5rem;
     padding-bottom: 3rem;
 }
 
@@ -84,7 +84,8 @@ html, body, [class*="css"] {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 2.4rem;
+    padding-top: .4rem;
 }
 
 .brand {
@@ -120,10 +121,11 @@ html, body, [class*="css"] {
     background: rgba(48, 242, 138, 0.08);
     font-size: 0.82rem;
     font-weight: 800;
+    white-space: nowrap;
 }
 
 .hero {
-    padding: 1.2rem 0 1.6rem;
+    padding: 1.6rem 0 1.6rem;
 }
 
 .kicker {
@@ -375,6 +377,9 @@ html, body, [class*="css"] {
     .status-pill {
         width: fit-content;
     }
+    .block-container {
+        padding-top: 4.4rem;
+    }
 }
 </style>
 """
@@ -419,7 +424,7 @@ st.markdown(
                 <div style="color: rgba(255,255,255,.58); font-size: .82rem; font-weight: 700;">Transcript intelligence workspace</div>
             </div>
         </div>
-        <div class="status-pill">Mistral + Whisper + RAG</div>
+        <div class="status-pill">LLM + Whisper + RAG</div>
     </div>
     <section class="hero">
         <div class="kicker">Video to insight pipeline</div>
@@ -464,11 +469,20 @@ if run_clicked:
             st.success("Analysis complete.")
         except Exception as exc:
             st.session_state.result = None
-            st.error(str(exc))
-            st.info(
-                "Try a shorter video, confirm the source has audible speech, or set "
-                "WHISPER_MODEL=base/tiny in .env for faster local transcription."
-            )
+            error_message = str(exc)
+            st.error(error_message)
+            if "YouTube blocked" in error_message or "HTTP 403" in error_message:
+                st.info(
+                    "This can happen on Streamlit Cloud because YouTube often blocks "
+                    "datacenter requests. Try another public video, redeploy after "
+                    "yt-dlp updates, or add YouTube cookies as YOUTUBE_COOKIES_TEXT "
+                    "in Streamlit secrets."
+                )
+            else:
+                st.info(
+                    "Try a shorter video, confirm the source has audible speech, or set "
+                    "WHISPER_MODEL=base/tiny in .env for faster local transcription."
+                )
 
 
 result = st.session_state.result
