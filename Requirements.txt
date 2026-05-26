@@ -1,0 +1,64 @@
+# =========================
+# Core App
+# =========================
+streamlit
+python-dotenv
+
+# =========================
+# Audio / Video Processing
+# =========================
+yt-dlp
+ffmpeg-python
+pydub
+
+# =========================
+# Speech-to-Text (Whisper)
+# =========================
+openai-whisper
+torch
+torchaudio
+
+# =========================
+# Translation
+# =========================
+deep-translator
+
+# =========================
+# LangChain + Mistral
+# =========================
+langchain
+langchain-core
+langchain-community
+langchain-text-splitters
+langchain-mistralai
+langchain-chroma
+
+# =========================
+# RAG / Vector DB
+# =========================
+chromadb
+sentence-transformers
+huggingface-hub
+
+# =========================
+# Embeddings
+# =========================
+transformers
+
+# =========================
+# PDF Export
+# =========================
+fpdf
+
+# =========================
+# Utilities
+# =========================
+numpy
+pandas
+requests
+tqdm
+
+# =========================
+# Optional (better tokenization)
+# =========================
+tiktoken
