@@ -4,6 +4,7 @@
 streamlit
 python-dotenv
 protobuf<4
+pyaudioop
 
 # =========================
 # Audio / Video Processing
