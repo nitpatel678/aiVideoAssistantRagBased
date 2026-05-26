@@ -1,6 +1,7 @@
 import yt_dlp
-from pydub import AudioSegment
+import glob
 import os
+import subprocess
 
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
@@ -27,23 +28,34 @@ def download_youtube_audio(url:str) -> str:
 
     return filename
 
+def run_ffmpeg(args: list[str]) -> None:
+    command = ["ffmpeg", "-y", *args]
+    subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+
+
 def convert_to_wav(input_file:str) -> str:
     output_path = os.path.splitext(input_file)[0] + "_converted.wav"
-    audio = AudioSegment.from_file(input_file)
-    audio = audio.set_frame_rate(16000).set_channels(1) #16kHz, mono
-    audio.export(output_path, format='wav')
+    run_ffmpeg(["-i", input_file, "-ar", "16000", "-ac", "1", output_path])
     return output_path
 
 
 def chunk_audio(wav_path : str , chunk_minutes : int = 10) -> list:
-    audio = AudioSegment.from_wav(wav_path)
-    chunk_length_ms = chunk_minutes * 60 * 1000
-    chunks = []
-    for i in range(0, len(audio), chunk_length_ms):
-        chunk = audio[i:i + chunk_length_ms]
-        chunk_path = f"{os.path.splitext(wav_path)[0]}_chunk_{i//chunk_length_ms}.wav"
-        chunk.export(chunk_path, format='wav')
-        chunks.append(chunk_path)
+    chunk_seconds = chunk_minutes * 60
+    chunk_pattern = f"{os.path.splitext(wav_path)[0]}_chunk_%03d.wav"
+    run_ffmpeg([
+        "-i",
+        wav_path,
+        "-f",
+        "segment",
+        "-segment_time",
+        str(chunk_seconds),
+        "-c",
+        "copy",
+        chunk_pattern,
+    ])
+    chunks = sorted(glob.glob(chunk_pattern.replace("%03d", "*")))
+    if not chunks:
+        chunks = [wav_path]
     return chunks
 
 def process_input(source:str) -> list:

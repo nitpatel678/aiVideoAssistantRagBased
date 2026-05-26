@@ -4,14 +4,12 @@
 streamlit
 python-dotenv
 protobuf<4
-pyaudioop
 
 # =========================
 # Audio / Video Processing
 # =========================
 yt-dlp
 ffmpeg-python
-pydub
 
 # =========================
 # Speech-to-Text (Whisper)
