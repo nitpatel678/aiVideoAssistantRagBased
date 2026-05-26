@@ -3,6 +3,7 @@
 # =========================
 streamlit
 python-dotenv
+protobuf<4
 
 # =========================
 # Audio / Video Processing

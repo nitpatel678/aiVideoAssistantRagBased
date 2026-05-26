@@ -4,6 +4,10 @@ AI Video Assistant turns a YouTube URL or local media file into a transcript,
 summary, action items, decisions, open questions, and a RAG-powered chat
 interface.
 
+## Live App
+
+https://aivideoassistantragbased.streamlit.app/
+
 ## Run Locally
 
 ```powershell
@@ -51,4 +55,6 @@ EMBEDDING_DEVICE = "cpu"
 10. Click `Deploy`.
 
 The repo includes `requirements.txt` for Python packages and `packages.txt` for
-the FFmpeg system package required by audio processing.
+the FFmpeg system package required by audio processing. `runtime.txt` pins
+Python 3.11 for better compatibility with Chroma, protobuf, Whisper, and
+PyTorch on Streamlit Cloud.
